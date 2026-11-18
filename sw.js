@@ -1,5 +1,5 @@
 // Caches the toolkit so it opens with no signal (e.g. in a club basement).
-const CACHE = 'nightout-v1';
+const CACHE = 'nightout-v2';
 const FILES = ['real.html', 'real.css', 'real.js', 'style.css', 'manifest.webmanifest', 'index.html', 'game.js'];
 
 self.addEventListener('install', (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())));
