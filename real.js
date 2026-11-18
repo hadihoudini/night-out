@@ -51,7 +51,7 @@
 
   function go(screen) {
     $('#title').textContent = TITLES[screen] || 'REAL NIGHT';
-    $('#back').hidden = screen === 'home';
+    $('#back').style.visibility = screen === 'home' ? 'hidden' : 'visible'; // keeps the header grid steady
     $('#back').onclick = () => go(screen === 'check' ? 'taxi' : 'home');
     view.innerHTML = '';
     const meta = SCREEN_META[screen];
@@ -315,7 +315,7 @@
         <div class="field"><label for="meet">Meeting point if we get split up</label><input id="meet" placeholder="Outside the kebab shop" value="${esc(p.meet || '')}"></div>
         <div class="row">
           <div class="field"><label for="homeBy">Home by</label><input id="homeBy" type="time" required value="${p.homeBy ? toTimeInput(p.homeBy) : '02:30'}"></div>
-          <div class="field"><label for="who">Who to text (you send it)</label><input id="who" type="tel" placeholder="07..." value="${esc(p.alert || (contacts[0] ? contacts[0].num : ''))}"></div>
+          <div class="field"><label for="who">Text who? (you send)</label><input id="who" type="tel" placeholder="07..." value="${esc(p.alert || (contacts[0] ? contacts[0].num : ''))}"></div>
         </div>
         <button class="r-btn pink" type="submit">Save tonight's plan</button>`;
       form.addEventListener('submit', (e) => {
@@ -428,7 +428,9 @@
   setInterval(tick, 30000);
   checkPlan();
   setInterval(checkPlan, 20000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkPlan(); });
+  // Check on every visibility change: coming back to the tab, or the phone locking (notification still fires)
+  document.addEventListener('visibilitychange', checkPlan);
+  window.addEventListener('focus', checkPlan);
 
   // Offline + add-to-home-screen when served over https (service workers don't run from file://)
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});

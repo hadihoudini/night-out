@@ -259,3 +259,34 @@ body.real { min-height: 100vh; display: flex; justify-content: center; align-ite
 .tile.row .rt small, .sos small { font-family: var(--read); }
 .tile.row .chev { margin-left: 0; }
 .r-view h2.stage { color: var(--c); }
+
+/* ================= Typography + spacing pass ================= */
+/* VT323 has very tall built-in line spacing, so body text uses ~1.05 */
+.r-view { gap: 16px; padding: 18px 16px 28px; }
+.r-lede { font-size: 22px; line-height: 1.05; }
+.r-small { font-size: 19px; line-height: 1.05; }
+.card { font-size: 21px; line-height: 1.05; padding: 12px 14px; }
+.hc-sub { font-size: 21px; line-height: 1.05; margin-bottom: 8px; }
+.hc-big { line-height: 1.45; }
+.hero-card { gap: 8px; }
+.verdict-screen h3 { margin-bottom: 10px; }
+.verdict-screen p { font-size: 22px; line-height: 1.05; }
+.dial small, .sos small, .tile.row .rt small { line-height: 1; margin-top: 2px; }
+.dial span:last-child { display: grid; gap: 4px; }
+.tile.row .rt { gap: 6px; }
+.stage small { line-height: 1; }
+.r-foot { line-height: 1.05; }
+.r-alert-box p { line-height: 1.05; }
+.toast { line-height: 1.6; }
+
+/* Forms: clear gap between one field and the next label */
+form.r-stack { gap: 18px; }
+.field { gap: 8px; }
+.field label { line-height: 1.6; }
+.row { align-items: end; column-gap: 12px; }
+
+/* Header: Back | title | Game, with the title never squashed */
+.r-top { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; }
+.r-title { text-align: center; font-size: 10px; line-height: 1.4; }
+.r-back { visibility: visible; }
+.field input { height: 52px; box-sizing: border-box; }
