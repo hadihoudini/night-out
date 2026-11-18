@@ -279,6 +279,21 @@ body.woozy .text { animation: sway 3.2s ease-in-out infinite; filter: blur(0.6px
 @keyframes phoneDown { to { transform: translateY(105%); } }
 @keyframes blink { 50% { opacity: 0.35; } }
 
+/* Safety framework: PLAN -> SPOT -> ACT -> REPORT */
+.skill-pill { display: inline-block; margin: 0 0 8px 8px; padding: 5px 8px; font: 9px var(--pixel); color: #0b0716; vertical-align: top; }
+.skill-pill.plan, .skill.plan i { background: #c77dff; }
+.skill-pill.spot, .skill.spot i { background: #ffd166; }
+.skill-pill.act, .skill.act i { background: #3ddc84; }
+.skill-pill.report, .skill.report i { background: #4cc9f0; }
+.skills { max-width: 620px; margin: 4px auto 14px; padding: 12px 14px; background: var(--panel); border: 3px solid #000; }
+.skills h3 { margin: 0 0 10px; font: 10px var(--pixel); color: var(--gold); text-align: center; }
+.skill { display: grid; grid-template-columns: 70px 1fr 48px; align-items: center; gap: 10px; margin-bottom: 6px; font: 9px var(--pixel); }
+.skill b { text-align: right; font-weight: normal; }
+.sbar { height: 12px; background: #2b1d47; border: 2px solid #000; }
+.sbar i { display: block; height: 100%; }
+.skill-line { margin: 8px 0 0; text-align: center; font-size: 20px; color: var(--ink); }
+.skill-line b { color: var(--gold); font-weight: normal; }
+
 [hidden] { display: none !important; }
 
 @media (max-width: 720px) {

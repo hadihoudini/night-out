@@ -660,6 +660,10 @@
     s4: 'Scene 4 of 4 · Getting home',
   };
 
+  // The safety framework every choice trains
+  const SKILLS = { plan: 'PLAN', spot: 'SPOT', act: 'ACT', report: 'REPORT' };
+  const SKILL_HINT = { plan: 'Sort it before it happens', spot: 'Notice the warning signs', act: 'Do the safe thing, fast', report: 'Tell someone who can act' };
+
   const STORY = {
     intro: {
       ch: CH.pre, scene: 'flat', music: 'flat',
@@ -667,7 +671,7 @@
       who: 'Jess', text: "First proper night out of term! Town's going to be heaving. Ready?", next: 'plan',
     },
     plan: {
-      ch: CH.pre, scene: 'flat', music: 'flat',
+      ch: CH.pre, skill: 'plan', scene: 'flat', music: 'flat',
       chars: [{ id: 'you', x: 80 }, { id: 'jess', x: 132, mood: 'happy', face: 'left' }],
       who: 'Jess', text: 'Before we go, do we want a plan for if we lose each other?',
       choices: [
@@ -684,7 +688,7 @@
       who: 'Dean', text: "Hey gorgeous. Let me buy you a drink. Come on, don't be rude.", next: 'bar2',
     },
     bar2: {
-      ch: CH.s1, scene: 'bar', music: 'bar',
+      ch: CH.s1, skill: 'act', scene: 'bar', music: 'bar',
       chars: [{ id: 'staff', x: 214, behind: true, face: 'left' }, { id: 'you', x: 58, mood: 'worried' }, { id: 'jess', x: 26, mood: 'worried' }, { id: 'dean', x: 90, mood: 'sleazy', face: 'left' }],
       who: null, text: "He's been hovering round you for twenty minutes, standing far too close. He isn't taking the hint.",
       choices: [
@@ -703,7 +707,7 @@
       who: 'Bar staff', text: "Got it, Angela. Stay here with me. Security's having a word with him now.", next: 'sep1',
     },
     sep1: {
-      ch: CH.s2, scene: 'club', music: 'club', sfx: 'buzz', visionIf: 'spikedYou',
+      ch: CH.s2, skill: 'plan', scene: 'club', music: 'club', sfx: 'buzz', visionIf: 'spikedYou',
       chars: [{ id: 'you', x: 128, mood: 'worried' }],
       who: null, text: "An hour later, on the dance floor. You turn round and Jess is gone. Your call goes straight to voicemail.",
       choices: [
@@ -731,7 +735,7 @@
       next: 'spike1',
     },
     spike1: {
-      ch: CH.s3, scene: 'club', music: 'tense',
+      ch: CH.s3, skill: 'spot', scene: 'club', music: 'tense',
       chars: [{ id: 'you', x: 92, mood: 'worried' }, { id: 'jess', x: 150, mood: 'woozy', face: 'left' }],
       who: null, text: 'Jess could have been spiked. What do you do?',
       choices: [
@@ -745,7 +749,7 @@
       next: 'spike2',
     },
     spike2: {
-      ch: CH.s3, scene: 'club', music: 'tense',
+      ch: CH.s3, skill: 'act', scene: 'club', music: 'tense',
       chars: [{ id: 'you', x: 70, mood: 'worried' }, { id: 'jess', x: 128, mood: 'woozy' }, { id: 'security', x: 190, face: 'left', mood: 'worried' }],
       who: 'Security', text: "She's getting worse. She's confused and she's been sick.",
       choices: [
@@ -757,7 +761,7 @@
       next: 'spike3',
     },
     spike3: {
-      ch: CH.s3, scene: 'street', sceneOpts: { ambulance: true }, music: 'street', sfx: 'siren',
+      ch: CH.s3, skill: 'report', scene: 'street', sceneOpts: { ambulance: true }, music: 'street', sfx: 'siren',
       chars: [{ id: 'you', x: 50, mood: 'worried' }, { id: 'jess', x: 86, mood: 'worried' }, { id: 'medic', x: 124, face: 'left' }],
       who: 'Paramedic', text: "She's going to be okay. You did the right thing. Do you want to report it?",
       choices: [
@@ -769,7 +773,7 @@
       next: 'home1',
     },
     home1: {
-      ch: CH.s4, scene: 'street', sceneOpts: { car: 'unbooked' }, music: 'street', sfx: 'car',
+      ch: CH.s4, skill: 'spot', scene: 'street', sceneOpts: { car: 'unbooked' }, music: 'street', sfx: 'car',
       chars: [{ id: 'you', x: 60 }],
       who: null, text: "Jess's sister is with her at A&E. You've booked an Uber home: a silver Toyota. Then a different car pulls up: \"Taxi? Hop in, love, I'll do you a good price.\"",
       choices: [
@@ -784,7 +788,7 @@
       next: 'home2',
     },
     home2: {
-      ch: CH.s4, scene: 'street', music: 'tense', sfx: 'steps', timer: 12,
+      ch: CH.s4, skill: 'act', scene: 'street', music: 'tense', sfx: 'steps', timer: 12,
       chars: [{ id: 'follower', x: 30, approach: 70 }, { id: 'you', x: 150, mood: 'worried', face: 'left' }],
       who: null, text: "The car drops you at the end of your road. Footsteps. A man has been behind you since the corner, and he's getting closer. Decide fast.",
       choices: [
@@ -1021,6 +1025,7 @@
     sp.textContent = node.who || '';
     sp.className = 'speaker';
     $('#feedback').hidden = true;
+    $('#skill').hidden = true;
     $('#choices').textContent = '';
     $('#continueBtn').hidden = true;
     typeText(node.text, () => showOptions(node));
@@ -1045,6 +1050,12 @@
     });
     $('#choices').firstChild.focus();
     if (node.timer) startTimer(node, list);
+    if (node.skill) {
+      const pill = $('#skill');
+      pill.textContent = `${SKILLS[node.skill]} · ${SKILL_HINT[node.skill]}`;
+      pill.className = 'skill-pill ' + node.skill;
+      pill.hidden = false;
+    }
   }
 
   async function choose(node, c, timedOut) {
@@ -1063,7 +1074,7 @@
     if (fx.jess) game.jess = clamp(game.jess + fx.jess);
     if (c.set) game.flags[c.set] = true;
     const tip = timedOut ? "Out of time. Freezing is a normal reaction to fear, and it's not your fault. " + c.tip : c.tip;
-    game.log.push({ t: timedOut ? c.t + ' (out of time)' : c.t, g: c.g, tip });
+    game.log.push({ t: timedOut ? c.t + ' (out of time)' : c.t, g: c.g, tip, skill: node.skill });
     setBars();
     updateMusic();
     setTimeout(() => Sound.fx(c.g), 120);
@@ -1078,7 +1089,7 @@
 
     const fb = $('#feedback');
     fb.className = 'feedback ' + c.g;
-    const label = { good: 'GOOD CALL', risky: 'RISKY', bad: 'DANGER' }[c.g];
+    const label = (node.skill ? SKILLS[node.skill] + ' · ' : '') + { good: 'GOOD CALL', risky: 'RISKY', bad: 'DANGER' }[c.g];
     fb.innerHTML = '';
     const v = document.createElement('span');
     v.className = 'verdict';
@@ -1115,7 +1126,17 @@
     let headline = 'YOU MADE IT HOME';
     if (game.flags.unbooked) headline = 'YOU GOT HOME. THIS TIME.';
     else if (game.jess < 40) headline = 'YOU GOT HOME. JESS HAD IT ROUGH.';
-    game.result = { grade, headline, avg };
+    const skills = Object.keys(SKILLS).map((k) => {
+      const ls = game.log.filter((l) => l.skill === k);
+      return { k, v: ls.length ? ls.reduce((a, l) => a + { good: 1, risky: 0.5, bad: 0 }[l.g], 0) / ls.length : null };
+    });
+    const rated = skills.filter((s) => s.v !== null);
+    const best = rated.reduce((a, b) => (b.v > a.v ? b : a), rated[0]);
+    const worst = rated.reduce((a, b) => (b.v < a.v ? b : a), rated[0]);
+    let skillLine = 'Keep practising all four.';
+    if (best && worst && best.v !== worst.v) skillLine = `You nailed <b>${SKILLS[best.k]}</b>. Work on <b>${SKILLS[worst.k]}</b>.`;
+    else if (best && best.v === 1) skillLine = 'You nailed all four skills.';
+    game.result = { grade, headline, avg, skills };
     current = { scene: 'street', opts: { dawn: true }, chars: [{ id: 'you', x: 100, mood: avg >= 65 ? 'happy' : 'ok' }, { id: 'jess', x: 140, mood: game.jess >= 65 ? 'happy' : 'worried', face: 'left' }] };
     Sound.play('end');
     Sound.fx(avg >= 65 ? 'good' : 'risky');
@@ -1132,6 +1153,11 @@
         <div>Your safety<b>${game.you}</b></div>
         <div>Jess's safety<b>${game.jess}</b></div>
         <div>Good calls<b>${game.log.filter((l) => l.g === 'good').length}/${game.log.length}</b></div>
+      </div>
+      <div class="skills">
+        <h3>PLAN → SPOT → ACT → REPORT</h3>
+        ${skills.map((s) => `<div class="skill ${s.k}"><span>${SKILLS[s.k]}</span><div class="sbar"><i style="width:${Math.round((s.v || 0) * 100)}%"></i></div><b>${s.v === null ? '–' : Math.round(s.v * 100) + '%'}</b></div>`).join('')}
+        <p class="skill-line">${skillLine}</p>
       </div>
       <div class="end-cols">
         <div class="end-box"><h3>YOUR NIGHT</h3><ul id="endLog"></ul></div>
@@ -1194,6 +1220,9 @@
     const good = game.log.filter((l) => l.g === 'good').length;
     g.fillText(`${good}/${game.log.length} GOOD CALLS`, 540, 900);
     g.fillText(`YOU ${game.you}  ·  JESS ${game.jess}`, 540, 960);
+    g.font = `20px ${PX}`;
+    g.fillStyle = '#3ddc84';
+    g.fillText(r.skills.map((s) => `${SKILLS[s.k]} ${s.v === null ? '-' : Math.round(s.v * 100)}`).join('  ·  '), 540, 1030);
     g.fillStyle = '#ff4fa3';
     g.font = `40px ${PX}`;
     g.fillText('NIGHT OUT', 540, 1110);

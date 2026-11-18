@@ -75,23 +75,26 @@
         const b = button("I'm home safe", 'r-btn green', () => { store.set('plan', Object.assign(plan, { done: true })); toast('Glad you’re home. Night!'); go('home'); });
         view.append(b);
       }
-      const tiles = document.createElement('div');
-      tiles.className = 'tiles';
+      // Same framework as the game: PLAN -> SPOT -> ACT -> REPORT
       [
-        ['share', 'Share where I am', '#3fa7d6', '◉'],
-        ['taxi', 'My taxi', '#ffd166', '▣'],
-        ['dial', 'Quick dial', '#ff5a5a', '999'],
-        ['safe', 'Safe places', '#3ddc84', '✚'],
-        ['plan', "Tonight's plan", '#c77dff', '✎', true],
-      ].forEach(([id, label, col, icon, wide]) => {
-        const t = document.createElement('button');
-        t.type = 'button';
-        t.className = 'tile' + (wide ? ' wide' : '');
-        t.innerHTML = `<span class="ic${icon.length > 1 ? ' txt' : ''}" style="background:${col}">${icon}</span><span>${esc(label)}</span>`;
-        t.addEventListener('click', () => go(id));
-        tiles.append(t);
+        ['PLAN', '#c77dff', [['plan', "Tonight's plan", '✎']]],
+        ['SPOT', '#ffd166', [['taxi', 'Check my taxi', '▣']]],
+        ['ACT', '#3ddc84', [['share', 'Share where I am', '◉'], ['dial', 'Quick dial', '999'], ['safe', 'Safe places', '✚']]],
+        ['REPORT', '#4cc9f0', [['report', 'Report it', '!']]],
+      ].forEach(([stage, col, items]) => {
+        html(`<h2 class="stage" style="color:${col}">${stage}</h2>`);
+        const tiles = document.createElement('div');
+        tiles.className = 'tiles';
+        items.forEach(([id, label, icon], i) => {
+          const t = document.createElement('button');
+          t.type = 'button';
+          t.className = 'tile' + (items.length % 2 && i === items.length - 1 ? ' wide' : '');
+          t.innerHTML = `<span class="ic${icon.length > 1 ? ' txt' : ''}" style="background:${col}">${icon}</span><span>${esc(label)}</span>`;
+          t.addEventListener('click', () => go(id));
+          tiles.append(t);
+        });
+        view.append(tiles);
       });
-      view.append(tiles);
       html(`<p class="r-small">In danger? Call 999. Can't speak? On a mobile, call 999 and press 55 when asked so the police know it's a real emergency. It doesn't send your location, so whisper where you are if you can.</p>`);
     },
 
@@ -286,6 +289,23 @@
     view.append(button('Done', 'r-btn pink', () => go('home')));
   };
   TITLES.sent = 'PLAN SAVED';
+
+  SCREENS.report = function () {
+    html(`<p class="r-lede">Reporting helps police and venues spot patterns and stop it happening to someone else. You can report even days later.</p>`);
+    [
+      ['999', 'In danger right now', 'Police, ambulance', 'red'],
+      ['101', 'Report to police', 'Spiking, harassment, being followed', ''],
+      ['0800 555 111', 'Crimestoppers', '100% anonymous', ''],
+      ['0808 500 2222', 'Rape Crisis', '24/7 support line (England & Wales)', 'green'],
+    ].forEach(([num, label, sub, cls]) => {
+      const a = link_('', telHref(num), 'r-btn dial ' + cls);
+      a.innerHTML = `<span class="num">${num.length > 4 ? '☎' : num}</span><span>${esc(label)}<small>${esc(num.length > 4 ? num + ' · ' + sub : sub)}</small></span>`;
+      view.append(a);
+    });
+    html(`<div class="card"><b>Spiked?</b> Report it quickly so the police can arrange a test. Some drugs leave the body within hours. Tell the venue too.</div>`);
+    html(`<div class="card"><b>Sexual assault?</b> Sexual assault referral centres (SARCs) give free medical care and can store evidence while you decide whether to report. It's never your fault.</div>`);
+  };
+  TITLES.report = 'REPORT IT';
 
   /* ---------- home-by check-in ---------- */
   function checkPlan() {
