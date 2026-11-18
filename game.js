@@ -37,7 +37,7 @@
       master.gain.value = muted ? 0 : 0.8;
       master.connect(ac.destination);
       music = ac.createGain();
-      music.gain.value = 0.6;
+      music.gain.value = 0.85;
       lowpass = ac.createBiquadFilter();
       lowpass.type = 'lowpass';
       lowpass.frequency.value = 20000;
@@ -227,14 +227,20 @@
       async play(name) {
         if (!ac || wanted === name) return;
         wanted = name;
-        const file = await probe(name);
-        if (wanted !== name) return;
-        if (fileAudio && fileAudio !== file) {
+        if (fileAudio) {
           const old = fileAudio;
           fadeAudio(old, 0, 800, () => old.pause());
           fileAudio = null;
         }
-        if (file) {
+        // Start the built-in music straight away; switch to a real track only if one exists
+        track = name;
+        step = 0;
+        melodyIdx = 0;
+        nextTime = ac.currentTime + 0.05;
+        if (!timer) timer = setInterval(scheduler, 25);
+        const file = await probe(name);
+        if (wanted !== name || !file) return;
+        {
           track = null;
           fileAudio = file;
           file.currentTime = 0;
@@ -243,12 +249,6 @@
           file.playbackRate = woozy ? 0.85 : 1;
           file.play().catch(() => {});
           fadeAudio(file, muted ? 0 : FILE_VOL, 900);
-        } else {
-          track = name;
-          step = 0;
-          melodyIdx = 0;
-          nextTime = ac.currentTime + 0.05;
-          if (!timer) timer = setInterval(scheduler, 25);
         }
       },
       stop() {
