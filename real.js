@@ -54,6 +54,8 @@
     $('#back').hidden = screen === 'home';
     $('#back').onclick = () => go(screen === 'check' ? 'taxi' : 'home');
     view.innerHTML = '';
+    const meta = SCREEN_META[screen];
+    if (meta) html(`<div class="scr-head" style="--c:${meta[1]}"><span class="ic">${pixelIcon(meta[2])}</span><span class="stage-chip">${meta[0]}</span></div>`);
     SCREENS[screen]();
     const first = view.querySelector('button, a, input');
     if (first && screen !== 'home') first.focus({ preventScroll: true });
@@ -65,37 +67,92 @@
     view.insertAdjacentHTML('beforeend', s);
   }
 
+  const STAGES = [
+    { name: 'PLAN', c: '#c77dff', hint: 'Sort it before it happens', items: [['plan', "Tonight's plan", 'Meeting point, home-by time, group chat', 'clip']] },
+    { name: 'SPOT', c: '#ffd166', hint: 'Notice the warning signs', items: [['taxi', 'Check my taxi', 'Match the plate before you get in', 'car']] },
+    { name: 'ACT', c: '#3ddc84', hint: 'Do the safe thing, fast', items: [
+      ['share', 'Share where I am', 'Send a friend a map pin', 'pin'],
+      ['dial', 'Quick dial', '999 · 101 · 111 · your people', 'phone'],
+      ['safe', 'Safe places', 'Open, lit and staffed, near you', 'shop'],
+    ] },
+    { name: 'REPORT', c: '#4cc9f0', hint: 'Tell someone who can act', items: [['report', 'Report it', 'Police, anonymous line, Rape Crisis', 'mega']] },
+  ];
+  const SCREEN_META = {
+    plan: ['PLAN', '#c77dff', 'clip'], sent: ['PLAN', '#c77dff', 'clip'],
+    taxi: ['SPOT', '#ffd166', 'car'], check: ['SPOT', '#ffd166', 'car'],
+    share: ['ACT', '#3ddc84', 'pin'], dial: ['ACT', '#3ddc84', 'phone'], safe: ['ACT', '#3ddc84', 'shop'],
+    report: ['REPORT', '#4cc9f0', 'mega'],
+  };
+
+  // 10x10 pixel-art icons, drawn as crisp SVG so they match the game
+  const ICONS = {
+    pin: ['...####...', '..######..', '.###..###.', '.##....##.', '.###..###.', '..######..', '...####...', '....##....', '....##....', '..........'],
+    car: ['..........', '...####...', '..#....#..', '.########.', '##########', '#.######.#', '##########', '.##....##.', '..........', '..........'],
+    phone: ['..######..', '..#....#..', '..#....#..', '..#....#..', '..#....#..', '..#....#..', '..######..', '..##..##..', '..######..', '..........'],
+    shop: ['....##....', '...####...', '..######..', '.########.', '##########', '.#......#.', '.#.##.#.#.', '.#.##.#.#.', '.#.##...#.', '.########.'],
+    clip: ['...####...', '.##....##.', '.#.####.#.', '.#......#.', '.#.####.#.', '.#......#.', '.#.###..#.', '.#......#.', '.########.', '..........'],
+    mega: ['........#.', '......###.', '....#####.', '##.######.', '##########', '##########', '##.######.', '....#####.', '......###.', '........#.'],
+    lock: ['...####...', '..#....#..', '..#....#..', '.########.', '.########.', '.####.###.', '.####.###.', '.########.', '.########.', '..........'],
+  };
+  function pixelIcon(name) {
+    const g = ICONS[name] || ICONS.pin;
+    let rects = '';
+    g.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === '#') rects += `<rect x="${x}" y="${y}" width="1" height="1"/>`; }));
+    return `<svg class="pix" viewBox="0 0 10 10" aria-hidden="true" shape-rendering="crispEdges" fill="currentColor">${rects}</svg>`;
+  }
+  function duration(ms) {
+    const m = Math.max(0, Math.round(ms / 60000));
+    return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m} min`;
+  }
+
   /* ---------- screens ---------- */
   const SCREENS = {
     home() {
       const plan = store.get('plan', null);
-      html(`<p class="r-lede">Your toolkit for tonight. You practised all of this in the game. Nothing leaves this phone.</p>`);
+
+      // Tonight card: countdown to home-by, or a nudge to set a plan
       if (plan && !plan.done) {
-        html(`<div class="card">Home by <b>${esc(fmtTime(plan.homeBy))}</b>${plan.meet ? ` · Meeting point: <b>${esc(plan.meet)}</b>` : ''}</div>`);
-        const b = button("I'm home safe", 'r-btn green', () => { store.set('plan', Object.assign(plan, { done: true })); toast('Glad you’re home. Night!'); go('home'); });
-        view.append(b);
+        const left = plan.homeBy - Date.now();
+        const span = plan.homeBy - (plan.savedAt || plan.homeBy - 4 * 3600000);
+        const pct = Math.max(0, Math.min(100, 100 - (left / span) * 100));
+        html(`<section class="hero-card">
+          <p class="hc-kicker">TONIGHT</p>
+          <p class="hc-big">Home by ${esc(fmtTime(plan.homeBy))}</p>
+          <p class="hc-sub">${left > 0 ? 'in ' + duration(left) : 'Time to check in'}${plan.meet ? ` · meet at ${esc(plan.meet)}` : ''}</p>
+          <div class="hc-bar"><i style="width:${pct}%"></i></div>
+        </section>`);
+        view.lastElementChild.append(button("I'm home safe", 'r-btn green', () => { store.set('plan', Object.assign(plan, { done: true })); toast('Glad you’re home. Night!'); go('home'); }));
+      } else {
+        html(`<section class="hero-card">
+          <p class="hc-kicker">GOING OUT TONIGHT?</p>
+          <p class="hc-big">Make a plan in 2 minutes</p>
+          <p class="hc-sub">Meeting point, home-by time, and your group chat knows when to chase you.</p>
+        </section>`);
+        view.lastElementChild.append(button("Set tonight's plan", 'r-btn pink', () => go('plan')));
       }
-      // Same framework as the game: PLAN -> SPOT -> ACT -> REPORT
-      [
-        ['PLAN', '#c77dff', [['plan', "Tonight's plan", '✎']]],
-        ['SPOT', '#ffd166', [['taxi', 'Check my taxi', '▣']]],
-        ['ACT', '#3ddc84', [['share', 'Share where I am', '◉'], ['dial', 'Quick dial', '999'], ['safe', 'Safe places', '✚']]],
-        ['REPORT', '#4cc9f0', [['report', 'Report it', '!']]],
-      ].forEach(([stage, col, items]) => {
-        html(`<h2 class="stage" style="color:${col}">${stage}</h2>`);
-        const tiles = document.createElement('div');
-        tiles.className = 'tiles';
-        items.forEach(([id, label, icon], i) => {
-          const t = document.createElement('button');
-          t.type = 'button';
-          t.className = 'tile' + (items.length % 2 && i === items.length - 1 ? ' wide' : '');
-          t.innerHTML = `<span class="ic${icon.length > 1 ? ' txt' : ''}" style="background:${col}">${icon}</span><span>${esc(label)}</span>`;
-          t.addEventListener('click', () => go(id));
-          tiles.append(t);
+
+      const sos = button('', 'sos', () => go('dial'));
+      sos.innerHTML = `<span class="sos-num">999</span><span><b>In danger? Get help now</b><small>Can't speak? On a mobile, press 55 when asked</small></span><span class="chev">›</span>`;
+      view.append(sos);
+
+      // The framework from the game: PLAN -> SPOT -> ACT -> REPORT
+      html(`<div class="stepper">${STAGES.map((s) => `<span style="--c:${s.c}">${s.name}</span>`).join('<i>→</i>')}</div>`);
+      STAGES.forEach((stage, n) => {
+        html(`<h2 class="stage" style="--c:${stage.c}"><span>${n + 1}</span>${stage.name}<small>${stage.hint}</small></h2>`);
+        const list = document.createElement('div');
+        list.className = 'rows';
+        stage.items.forEach(([id, label, sub, icon]) => {
+          const row = document.createElement('button');
+          row.type = 'button';
+          row.className = 'tile row';
+          row.style.setProperty('--c', stage.c);
+          row.innerHTML = `<span class="ic">${pixelIcon(icon)}</span><span class="rt"><b>${esc(label)}</b><small>${esc(sub)}</small></span><span class="chev">›</span>`;
+          row.addEventListener('click', () => go(id));
+          list.append(row);
         });
-        view.append(tiles);
+        view.append(list);
       });
-      html(`<p class="r-small">In danger? Call 999. Can't speak? On a mobile, call 999 and press 55 when asked so the police know it's a real emergency. It doesn't send your location, so whisper where you are if you can.</p>`);
+      html(`<p class="r-foot">${pixelIcon('lock')} No account. Nothing leaves this phone. Works offline once opened.</p>`);
     },
 
     share() {
@@ -267,7 +324,7 @@
         const due = new Date();
         due.setHours(h, m, 0, 0);
         if (due.getTime() < Date.now() - 60000) due.setDate(due.getDate() + 1); // e.g. 02:30 means tonight
-        store.set('plan', { with: form.with.value.trim(), meet: form.meet.value.trim(), homeBy: due.getTime(), alert: form.who.value.trim(), done: false, alerted: false });
+        store.set('plan', { with: form.with.value.trim(), meet: form.meet.value.trim(), homeBy: due.getTime(), alert: form.who.value.trim(), done: false, alerted: false, savedAt: Date.now() });
         if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
         go('sent');
       });
@@ -364,6 +421,11 @@
   /* ---------- start ---------- */
   const start = (location.hash || '#home').slice(1);
   go(SCREENS[start] ? start : 'home');
+  function tick() {
+    $('#clock').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  }
+  tick();
+  setInterval(tick, 30000);
   checkPlan();
   setInterval(checkPlan, 20000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) checkPlan(); });
