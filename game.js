@@ -1214,12 +1214,12 @@
         </ul></div>
       </div>
       <div class="end-actions">
-        <a class="pbtn primary" href="real.html" id="realBtn">Ready for the real night? ▶</a>
+        <a class="pbtn primary" href="real.html#lock" id="realBtn">Make tonight's lock screen ▶</a>
         <button type="button" class="pbtn" id="cardBtn">Save my score card</button>
         <button type="button" class="pbtn" id="againBtn">Play again</button>
       </div>
       <p class="end-note">Whatever happens on a night out, it's never the victim's fault. Spiking, harassing and following someone are crimes, and the blame is always on the person who does them.</p>
-      <p class="end-real">The phone you just used is real. Share your location, check your taxi and quick-dial 999 on the night.</p>`;
+      <p class="end-real">Put tonight's plan on your lock screen, so it's there at 3am without opening anything. Escape Call is ready too.</p>`;
     const log = e.querySelector('#endLog');
     game.log.forEach((l) => {
       const li = document.createElement('li');

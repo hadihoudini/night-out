@@ -124,20 +124,28 @@
           <div class="hc-bar"><i style="width:${pct}%"></i></div>
         </section>`);
         view.lastElementChild.append(button("I'm home safe", 'r-btn green', () => { store.set('plan', Object.assign(plan, { done: true })); toast('Glad you’re home. Night!'); go('home'); }));
-      } else {
-        html(`<section class="hero-card">
-          <p class="hc-kicker">GOING OUT TONIGHT?</p>
-          <p class="hc-big">Make a plan in 2 minutes</p>
-          <p class="hc-sub">Meeting point, home-by time, and your group chat knows when to chase you.</p>
-        </section>`);
-        view.lastElementChild.append(button("Set tonight's plan", 'r-btn pink', () => go('plan')));
       }
+
+      // The two tools people will actually use: no app to open at 3am
+      html(`<section class="hero-card">
+        <p class="hc-kicker">GOING OUT TONIGHT?</p>
+        <p class="hc-big">Put your plan on your lock screen</p>
+        <p class="hc-sub">Meeting point, taxi plate and who to call, right where you, a friend or a bouncer will see it. No app to open at 3am.</p>
+      </section>`);
+      view.lastElementChild.append(button('Make my lock screen', 'r-btn pink', () => go('lock')));
+      html(`<section class="hero-card alt">
+        <p class="hc-kicker">NEED TO GET AWAY?</p>
+        <p class="hc-big">Escape Call</p>
+        <p class="hc-sub">Your phone rings with a fake call, and a voice talks when you answer.</p>
+      </section>`);
+      view.lastElementChild.append(button('Set up a call', 'r-btn', () => go('escape')));
 
       const sos = button('', 'sos', () => go('dial'));
       sos.innerHTML = `<span class="sos-num">999</span><span><b>In danger? Get help now</b><small>Can't speak? On a mobile, press 55 when asked</small></span><span class="chev">›</span>`;
       view.append(sos);
 
       // The framework from the game: PLAN -> SPOT -> ACT -> REPORT
+      html(`<h2 class="more">More tools</h2>`);
       html(`<div class="stepper">${STAGES.map((s) => `<span style="--c:${s.c}">${s.name}</span>`).join('<i>→</i>')}</div>`);
       STAGES.forEach((stage, n) => {
         html(`<h2 class="stage" style="--c:${stage.c}"><span>${n + 1}</span>${stage.name}<small>${stage.hint}</small></h2>`);
@@ -501,6 +509,210 @@
     html(`<p class="r-small">Tip: put your phone face down, and when it rings, answer it and walk away while you're "on the phone". Keep this page open: phones pause web pages in the background.</p>`);
   };
   TITLES.escape = 'ESCAPE CALL';
+
+  /* ---------- Lock-screen card: tonight's plan as a phone wallpaper ---------- */
+  function roundRect(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+  function wrapText(g, text, x, y, maxW, lh) {
+    const words = String(text).split(/\s+/).filter(Boolean);
+    let line = '';
+    for (const w of words) {
+      const test = line ? line + ' ' + w : w;
+      if (g.measureText(test).width > maxW && line) {
+        g.fillText(line, x, y);
+        y += lh;
+        line = w;
+      } else line = test;
+    }
+    if (line) {
+      g.fillText(line, x, y);
+      y += lh;
+    }
+    return y;
+  }
+  // 1170 x 2532 (iPhone size; Android crops the sides a little). Top ~38% is left clear for the phone's clock.
+  function lockCanvas(d) {
+    const W = 1170;
+    const H = 2532;
+    const c = document.createElement('canvas');
+    c.width = W;
+    c.height = H;
+    const g = c.getContext('2d');
+    const bg = g.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#1d2357');
+    bg.addColorStop(0.5, '#120a1f');
+    bg.addColorStop(1, '#0b0716');
+    g.fillStyle = bg;
+    g.fillRect(0, 0, W, H);
+    let s = 7;
+    const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    g.fillStyle = 'rgba(255,255,255,0.55)';
+    for (let i = 0; i < 90; i++) {
+      const z = rnd() < 0.2 ? 5 : 3;
+      g.fillRect(rnd() * W, rnd() * 880, z, z);
+    }
+    const sans = '"Segoe UI", -apple-system, Roboto, Helvetica, Arial, sans-serif';
+    const X = 80;
+    const CW = W - 160;
+    const top = 960;
+    // measure-then-draw: lay the rows out first to size the card
+    const rows = [];
+    if (d.meet) rows.push(['If we get split up, meet at', d.meet, true]);
+    if (d.with) rows.push(['Out with', d.with]);
+    if (d.home) rows.push(['Home by', d.home]);
+    if (d.plate) rows.push(['My taxi', d.plate, false, 'plate']);
+    if (d.cname || d.cnum) rows.push(['If I need help, call', [d.cname, d.cnum].filter(Boolean).join('  ')]);
+    const drawRows = (dry) => {
+      let y = top + 110;
+      g.font = `700 40px ${sans}`;
+      if (!dry) { g.fillStyle = '#ff4fa3'; g.fillText('TONIGHT', X + 64, y); }
+      y += 30;
+      rows.forEach(([label, value, big, kind]) => {
+        y += 56;
+        g.font = `500 36px ${sans}`;
+        if (!dry) { g.fillStyle = '#b8b0d8'; g.fillText(label, X + 64, y); }
+        y += 70;
+        if (kind === 'plate') {
+          g.font = `800 64px Consolas, "Courier New", monospace`;
+          const tw = g.measureText(value).width + 64;
+          if (!dry) {
+            g.fillStyle = '#ffd83d';
+            roundRect(g, X + 64, y - 62, tw, 88, 14);
+            g.fill();
+            g.fillStyle = '#0b0716';
+            g.fillText(value, X + 96, y + 2);
+          }
+          y += 40;
+        } else {
+          const size = big ? 66 : 54;
+          g.font = `700 ${size}px ${sans}`;
+          if (!dry) g.fillStyle = '#f5f3ff';
+          if (dry) {
+            const words = String(value).split(/\s+/);
+            let line = '';
+            let n = 1;
+            for (const w of words) {
+              const t = line ? line + ' ' + w : w;
+              if (g.measureText(t).width > CW - 128 && line) { n++; line = w; } else line = t;
+            }
+            y += (n - 1) * (size + 10);
+          } else {
+            y = wrapText(g, value, X + 64, y, CW - 128, size + 10) - (size + 10);
+          }
+        }
+      });
+      return y + 80;
+    };
+    const bottom = Math.min(2140, drawRows(true));
+    g.fillStyle = 'rgba(23,15,46,0.9)';
+    roundRect(g, X, top, CW, bottom - top, 56);
+    g.fill();
+    g.strokeStyle = 'rgba(255,79,163,0.65)';
+    g.lineWidth = 4;
+    g.stroke();
+    drawRows(false);
+    // emergency strip
+    const sy = Math.max(bottom + 40, 2100);
+    g.fillStyle = '#e5484d';
+    roundRect(g, X, sy, CW, 120, 40);
+    g.fill();
+    g.fillStyle = '#ffffff';
+    g.font = `700 46px ${sans}`;
+    g.textAlign = 'center';
+    g.fillText("999  ·  Can't speak? Press 55", W / 2, sy + 76);
+    g.font = `600 30px ${sans}`;
+    g.fillStyle = 'rgba(255,79,163,0.9)';
+    g.fillText('Night Out', W / 2, sy + 200);
+    g.textAlign = 'left';
+    return c;
+  }
+
+  SCREENS.lock = function () {
+    const plan = store.get('plan', null) || {};
+    const booking = store.get('booking', null) || {};
+    const contacts = store.get('contacts', []);
+    const d = store.get('lock', null) || {
+      with: plan.with || '',
+      meet: plan.meet || '',
+      home: plan.homeBy ? toTimeInput(plan.homeBy) : '02:30',
+      plate: booking.plate || '',
+      cname: contacts[0] ? contacts[0].name : '',
+      cnum: contacts[0] ? contacts[0].num : '',
+    };
+    html(`<p class="r-lede">Put tonight's plan where you'll actually see it. Set this as your lock screen: no app to open at 3am, and a friend or a bouncer can read it too.</p>`);
+    const form = document.createElement('form');
+    form.className = 'r-stack';
+    form.innerHTML = `
+      <div class="field"><label for="lmeet">Meeting point if we split up</label><input id="lmeet" maxlength="48" placeholder="Outside the kebab shop" value="${esc(d.meet)}"></div>
+      <div class="field"><label for="lwith">Who I'm out with</label><input id="lwith" maxlength="40" placeholder="Jess, Priya" value="${esc(d.with)}"></div>
+      <div class="row">
+        <div class="field"><label for="lhome">Home by</label><input id="lhome" type="time" value="${esc(d.home)}"></div>
+        <div class="field"><label for="lplate">Taxi plate</label><input id="lplate" maxlength="10" placeholder="BD21 XKM" value="${esc(d.plate)}"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="lcname">Call (name)</label><input id="lcname" maxlength="20" placeholder="Mum" value="${esc(d.cname)}"></div>
+        <div class="field"><label for="lcnum">Number</label><input id="lcnum" type="tel" maxlength="16" placeholder="07..." value="${esc(d.cnum)}"></div>
+      </div>`;
+    view.append(form);
+    const prev = document.createElement('div');
+    prev.className = 'lock-preview';
+    prev.innerHTML = '<img id="lockImg" alt="Preview of your lock screen">';
+    view.append(prev);
+    const actions = document.createElement('div');
+    actions.className = 'r-stack';
+    view.append(actions);
+    html(`<div class="card"><b>Set it as your wallpaper:</b> save the image, then on iPhone open it in Photos › Share › Use as Wallpaper. On Android, open it in Gallery › Set as wallpaper › Lock screen.</div>`);
+
+    let url = null;
+    let blob = null;
+    let queued = false;
+    const read = () => ({
+      meet: form.lmeet.value.trim(),
+      with: form.lwith.value.trim(),
+      home: form.lhome.value,
+      plate: form.lplate.value.trim().toUpperCase(),
+      cname: form.lcname.value.trim(),
+      cnum: form.lcnum.value.trim(),
+    });
+    const render = () => {
+      queued = false;
+      const data = read();
+      store.set('lock', data);
+      lockCanvas(data).toBlob((b) => {
+        blob = b;
+        if (url) URL.revokeObjectURL(url);
+        url = URL.createObjectURL(b);
+        const img = $('#lockImg');
+        if (!img) return; // left the screen before the image was ready
+        img.src = url;
+        dl.href = url;
+      }, 'image/png');
+    };
+    const dl = link_('Save the image', '#', 'r-btn pink big');
+    dl.removeAttribute('target');
+    dl.setAttribute('download', 'night-out-lock-screen.png');
+    actions.append(dl);
+    if (navigator.canShare) {
+      actions.append(button('Share to Photos…', 'r-btn', () => {
+        if (!blob) return;
+        const file = new File([blob], 'night-out-lock-screen.png', { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) navigator.share({ files: [file], title: 'Night Out lock screen' }).catch(() => {});
+        else toast('Use Save the image instead');
+      }));
+    }
+    form.addEventListener('input', () => { if (!queued) { queued = true; requestAnimationFrame(render); } });
+    form.addEventListener('submit', (e) => e.preventDefault());
+    render();
+  };
+  TITLES.lock = 'LOCK SCREEN';
+  SCREEN_META.lock = ['PLAN', '#c77dff', 'lock'];
 
   /* ---------- home-by check-in ---------- */
   function checkPlan() {
