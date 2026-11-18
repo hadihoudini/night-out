@@ -290,3 +290,40 @@ form.r-stack { gap: 18px; }
 .r-title { text-align: center; font-size: 10px; line-height: 1.4; }
 .r-back { visibility: visible; }
 .field input { height: 52px; box-sizing: border-box; }
+
+
+/* ================= Escape call ================= */
+.delays { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.delay { padding: 12px 4px; border: 0; background: #0b0716; color: var(--ink); font: 9px/1.4 var(--pixel); cursor: pointer; box-shadow: 0 0 0 3px #000, inset 0 0 0 2px var(--panel-2); }
+.delay.on { background: var(--good); color: #062512; }
+.delay:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* The call screen deliberately looks like a real phone call, not the game */
+.callscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px 24px calc(48px + env(safe-area-inset-bottom));
+  background: radial-gradient(circle at 50% 30%, #3b4a6b, #10141f 70%);
+  color: #fff;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  text-align: center;
+}
+.cs-label { margin: 0; font-size: 17px; letter-spacing: 0.02em; opacity: 0.8; }
+.cs-avatar { width: 112px; height: 112px; display: grid; place-items: center; border-radius: 50%; background: #8e9bb5; font-size: 48px; font-weight: 600; }
+.cs-avatar.on { background: #4caf7d; }
+.cs-name { margin: 0; font-size: 38px; font-weight: 400; }
+.cs-sub { margin: 0 0 auto; max-width: 340px; font-size: 18px; line-height: 1.35; opacity: 0.85; }
+.cs-actions { display: flex; gap: 48px; margin-top: 40px; }
+.cs-btn { width: 84px; height: 84px; border: 0; border-radius: 50%; color: #fff; font: 600 14px -apple-system, "Segoe UI", Roboto, sans-serif; cursor: pointer; }
+.cs-btn.decline { background: #e5484d; }
+.cs-btn.answer { background: #30a46c; animation: csPulse 1.2s ease-in-out infinite; }
+.cs-btn.wide { width: 120px; border-radius: 42px; }
+.cs-btn:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+@keyframes csPulse { 50% { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .cs-btn.answer { animation: none; } }

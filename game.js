@@ -263,6 +263,9 @@
       setIntensity(v) {
         intensity = Math.max(0, Math.min(1, v));
       },
+      isMuted() {
+        return muted;
+      },
       muffle(on) {
         woozy = on;
         if (lowpass) lowpass.frequency.setTargetAtTime(on ? 420 : 20000, ac.currentTime, 0.4);
@@ -698,6 +701,9 @@
           tip: 'Saying no clearly and moving towards your friends is a good move. If he follows you, tell staff. Dealing with that is their job.' },
         { t: 'Take the drink so he leaves you alone', fx: { you: -15 }, g: 'bad', set: 'spikedYou',
           tip: "If someone spikes a drink, that's on them, not you. If you can, stick to drinks you watched being poured and keep yours with you. Watch how the next scene feels." },
+        { t: 'Fake a call from Mum to get away', fx: { you: 12, jess: 3 }, g: 'good', phone: 'escape',
+          tip: 'A fake call gives you a reason to leave without an argument or a scene. Real night mode can make your own phone ring like this, for real.',
+          wrong: { fx: { you: -5 }, g: 'risky', tip: "You declined your own escape call, so Dean's still there. Next time, answer it and walk away while you're \"on the phone\"." } },
       ],
       next: 'sep1',
     },
@@ -829,6 +835,21 @@
     try { if (navigator.vibrate) navigator.vibrate(pattern); } catch (e) { /* not allowed */ }
   }
 
+  function speak(text) {
+    try {
+      const s = window.speechSynthesis;
+      if (!s || Sound.isMuted()) return;
+      s.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      const voices = s.getVoices();
+      const v = voices.find((x) => /en-GB/i.test(x.lang) && /female|libby|sonia|kate|serena|hazel|susan/i.test(x.name)) || voices.find((x) => /en-GB/i.test(x.lang)) || voices.find((x) => /^en/i.test(x.lang));
+      if (v) u.voice = v;
+      u.rate = 1.02;
+      u.pitch = 1.05;
+      s.speak(u);
+    } catch (e) { /* speech not available */ }
+  }
+
   function setVision(on) {
     visionTarget = on ? 1 : 0;
     document.body.classList.toggle('woozy', on);
@@ -937,6 +958,27 @@
             '<div class="ph-card dark">Dark grey hatchback<br><span class="plate">KT07 ZPL</span></div>' +
             '<p class="ph-q">Does it match?</p>';
           sc.append(btn('It matches. Get in', 'bad', () => done('wrong')), btn("It doesn't match. Wait", 'go', () => done('correct')));
+        }
+
+        if (kind === 'escape') {
+          const line = "Where are you? I'm outside in the car. Come out now, both of you.";
+          sc.innerHTML = '<p class="ph-top">INCOMING CALL</p><div class="ph-avatar">M</div><p class="ph-big ph-name">Mum</p><p class="ph-small ph-pulse">mobile</p>';
+          Sound.fx('ring');
+          buzz([400, 200, 400]);
+          const ringLoop = setInterval(() => { Sound.fx('ring'); buzz([400, 200, 400]); }, 1200);
+          const row = document.createElement('div');
+          row.className = 'ph-callrow';
+          row.append(
+            btn('Decline', 'bad', () => { clearInterval(ringLoop); done('declined'); }),
+            btn('Answer', 'go', () => {
+              clearInterval(ringLoop);
+              sc.innerHTML = `<p class="ph-top">MUM · ON CALL</p><div class="ph-avatar on">M</div><p class="ph-msg">"${line}"</p>`;
+              speak(line);
+              sc.append(btn('Leave with Jess', 'go', () => { try { window.speechSynthesis.cancel(); } catch (e) { /* none */ } done('ok'); }));
+              focusFirst();
+            })
+          );
+          sc.append(row);
         }
 
         if (kind === 'share') {
@@ -1066,7 +1108,7 @@
     $('#choices').textContent = '';
     if (c.phone) {
       const outcome = await Phone.open(c.phone);
-      if (outcome === 'wrong' && c.wrong) c = Object.assign({}, c, c.wrong);
+      if ((outcome === 'wrong' || outcome === 'declined') && c.wrong) c = Object.assign({}, c, c.wrong);
     }
     game.choosing = false;
     const fx = c.fx || {};

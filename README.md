@@ -19,6 +19,7 @@ Pitch shortcut: add a scene name to the URL to jump straight to it, e.g. `index.
 
 - **You feel it:** a "through Jess's eyes" scene blurs, wobbles and muffles the screen; a 12-second countdown with a heartbeat when you're followed; screen shake and vibration when you choose badly.
 - **You do it:** a phone slides up mid-game, and you slide to call 999, compare a taxi plate with your booking, and share your location.
+- **Escape Call, in the game and for real:** fake a call from Mum to get away from someone at the bar, with a real voice when you answer. In Real night mode your own phone rings the same way, with a ringtone, vibration and a spoken voice.
 - **Then it's real:** the same phone screens work for real in Real night mode.
 - **Music reacts to danger:** chiptune is generated live in the browser and gets faster and fuller as safety drops. Optional real tracks can be dropped into `music/`.
 - **Private by design:** no accounts, no server, nothing leaves the phone. Works offline once it's been opened.

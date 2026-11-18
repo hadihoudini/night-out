@@ -71,6 +71,7 @@
     { name: 'PLAN', c: '#c77dff', hint: 'Sort it before it happens', items: [['plan', "Tonight's plan", 'Meeting point, home-by time, group chat', 'clip']] },
     { name: 'SPOT', c: '#ffd166', hint: 'Notice the warning signs', items: [['taxi', 'Check my taxi', 'Match the plate before you get in', 'car']] },
     { name: 'ACT', c: '#3ddc84', hint: 'Do the safe thing, fast', items: [
+      ['escape', 'Escape call', 'Your phone rings, and a voice talks', 'bell'],
       ['share', 'Share where I am', 'Send a friend a map pin', 'pin'],
       ['dial', 'Quick dial', '999 · 101 · 111 · your people', 'phone'],
       ['safe', 'Safe places', 'Open, lit and staffed, near you', 'shop'],
@@ -80,7 +81,7 @@
   const SCREEN_META = {
     plan: ['PLAN', '#c77dff', 'clip'], sent: ['PLAN', '#c77dff', 'clip'],
     taxi: ['SPOT', '#ffd166', 'car'], check: ['SPOT', '#ffd166', 'car'],
-    share: ['ACT', '#3ddc84', 'pin'], dial: ['ACT', '#3ddc84', 'phone'], safe: ['ACT', '#3ddc84', 'shop'],
+    escape: ['ACT', '#3ddc84', 'bell'], share: ['ACT', '#3ddc84', 'pin'], dial: ['ACT', '#3ddc84', 'phone'], safe: ['ACT', '#3ddc84', 'shop'],
     report: ['REPORT', '#4cc9f0', 'mega'],
   };
 
@@ -88,6 +89,7 @@
   const ICONS = {
     pin: ['...####...', '..######..', '.###..###.', '.##....##.', '.###..###.', '..######..', '...####...', '....##....', '....##....', '..........'],
     car: ['..........', '...####...', '..#....#..', '.########.', '##########', '#.######.#', '##########', '.##....##.', '..........', '..........'],
+    bell: ['....##....', '...####...', '..######..', '..######..', '..######..', '.########.', '##########', '..........', '....##....', '..........'],
     phone: ['..######..', '..#....#..', '..#....#..', '..#....#..', '..#....#..', '..#....#..', '..######..', '..##..##..', '..######..', '..........'],
     shop: ['....##....', '...####...', '..######..', '.########.', '##########', '.#......#.', '.#.##.#.#.', '.#.##.#.#.', '.#.##...#.', '.########.'],
     clip: ['...####...', '.##....##.', '.#.####.#.', '.#......#.', '.#.####.#.', '.#......#.', '.#.###..#.', '.#......#.', '.########.', '..........'],
@@ -363,6 +365,142 @@
     html(`<div class="card"><b>Sexual assault?</b> Sexual assault referral centres (SARCs) give free medical care and can store evidence while you decide whether to report. It's never your fault.</div>`);
   };
   TITLES.report = 'REPORT IT';
+
+  /* ---------- Escape call: a fake incoming call with a ringtone, vibration and a real voice ---------- */
+  let ac = null;
+  let ringTimer = null;
+  let callTimer = null;
+  let pendingCall = null;
+  function audio() {
+    if (!ac) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) ac = new AC();
+    }
+    if (ac && ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  function ringOnce() {
+    const a = audio();
+    if (!a) return;
+    const t = a.currentTime;
+    // UK-style double ring: 400 + 450 Hz, on 0.4s, off 0.2s, on 0.4s
+    [[0, 0.4], [0.6, 0.4]].forEach(([s, d]) => [400, 450].forEach((f) => {
+      const o = a.createOscillator();
+      const g = a.createGain();
+      o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + s);
+      g.gain.exponentialRampToValueAtTime(0.22, t + s + 0.02);
+      g.gain.setValueAtTime(0.22, t + s + d - 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + s + d);
+      o.connect(g);
+      g.connect(a.destination);
+      o.start(t + s);
+      o.stop(t + s + d + 0.05);
+    }));
+  }
+  function startRing() {
+    ringOnce();
+    ringTimer = setInterval(ringOnce, 3000);
+    try { if (navigator.vibrate) navigator.vibrate([400, 200, 400, 2000, 400, 200, 400, 2000, 400, 200, 400, 2000, 400, 200, 400]); } catch (e) { /* none */ }
+  }
+  function stopRing() {
+    clearInterval(ringTimer);
+    try { if (navigator.vibrate) navigator.vibrate(0); } catch (e) { /* none */ }
+  }
+  function speakLine(text) {
+    try {
+      const s = window.speechSynthesis;
+      if (!s) return;
+      s.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      const voices = s.getVoices();
+      const v = voices.find((x) => /en-GB/i.test(x.lang) && /female|libby|sonia|kate|serena|hazel|susan/i.test(x.name)) || voices.find((x) => /en-GB/i.test(x.lang)) || voices.find((x) => /^en/i.test(x.lang));
+      if (v) u.voice = v;
+      u.rate = 1.02;
+      u.pitch = 1.05;
+      s.speak(u);
+    } catch (e) { /* speech not available */ }
+  }
+  function showIncoming(name, line) {
+    pendingCall = null;
+    const cs = $('#callscreen');
+    $('#csLabel').textContent = 'incoming call';
+    $('#csAvatar').textContent = (name.trim()[0] || '?').toUpperCase();
+    $('#csAvatar').className = 'cs-avatar';
+    $('#csName').textContent = name;
+    $('#csSub').textContent = 'mobile';
+    const actions = $('#csActions');
+    actions.innerHTML = '';
+    const decline = button('Decline', 'cs-btn decline', endCall);
+    const answer = button('Answer', 'cs-btn answer', () => {
+      stopRing();
+      let secs = 0;
+      $('#csLabel').textContent = '00:00';
+      $('#csAvatar').className = 'cs-avatar on';
+      $('#csSub').textContent = '“' + line + '”';
+      callTimer = setInterval(() => {
+        secs++;
+        $('#csLabel').textContent = String(Math.floor(secs / 60)).padStart(2, '0') + ':' + String(secs % 60).padStart(2, '0');
+      }, 1000);
+      speakLine(line);
+      actions.innerHTML = '';
+      actions.append(button('End call', 'cs-btn decline wide', endCall));
+      actions.firstChild.focus();
+    });
+    actions.append(decline, answer);
+    cs.hidden = false;
+    startRing();
+    answer.focus();
+  }
+  function endCall() {
+    stopRing();
+    clearInterval(callTimer);
+    try { window.speechSynthesis.cancel(); } catch (e) { /* none */ }
+    $('#callscreen').hidden = true;
+    if (location.hash === '#escape') go('escape');
+  }
+
+  SCREENS.escape = function () {
+    const saved = store.get('escape', { name: 'Mum', line: "Where are you? I'm outside in the car. Come out now, I need you." });
+    html(`<p class="r-lede">Need a reason to leave? Your phone will ring with a fake call. When you answer, a voice talks, so it sounds real to anyone nearby.</p>`);
+    if (pendingCall) {
+      html(`<div class="card good">${esc(saved.name)} will call in about ${esc(pendingCall.label)}. Keep this page open and your phone unlocked.</div>`);
+      view.append(button('Cancel the call', 'r-btn', () => { clearTimeout(pendingCall.t); pendingCall = null; toast('Call cancelled'); go('escape'); }));
+      return;
+    }
+    const form = document.createElement('form');
+    form.className = 'r-stack';
+    form.innerHTML = `
+      <div class="field"><label for="ename">Who's calling</label><input id="ename" required maxlength="24" value="${esc(saved.name)}"></div>
+      <div class="field"><label for="eline">What they say</label><input id="eline" required maxlength="140" value="${esc(saved.line)}"></div>
+      <div class="field"><label>Ring in</label><div class="delays">
+        <button type="button" class="delay on" data-s="3">3 sec</button>
+        <button type="button" class="delay" data-s="30">30 sec</button>
+        <button type="button" class="delay" data-s="60">1 min</button>
+        <button type="button" class="delay" data-s="300">5 min</button>
+      </div></div>
+      <button class="r-btn pink big" type="submit">Schedule the call</button>`;
+    let delay = 3;
+    form.querySelectorAll('.delay').forEach((b) => b.addEventListener('click', () => {
+      form.querySelectorAll('.delay').forEach((x) => x.classList.toggle('on', x === b));
+      delay = +b.dataset.s;
+    }));
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      audio(); // unlock sound now, while we have the tap
+      try { window.speechSynthesis && window.speechSynthesis.getVoices(); } catch (err) { /* none */ }
+      const name = form.ename.value.trim() || 'Mum';
+      const line = form.eline.value.trim();
+      store.set('escape', { name, line });
+      const label = delay < 60 ? delay + ' seconds' : delay / 60 + ' minute' + (delay > 60 ? 's' : '');
+      pendingCall = { label, t: setTimeout(() => showIncoming(name, line), delay * 1000) };
+      toast(`${name} will call in ${label}`);
+      go('escape');
+    });
+    view.append(form);
+    html(`<p class="r-small">Tip: put your phone face down, and when it rings, answer it and walk away while you're "on the phone". Keep this page open: phones pause web pages in the background.</p>`);
+  };
+  TITLES.escape = 'ESCAPE CALL';
 
   /* ---------- home-by check-in ---------- */
   function checkPlan() {
