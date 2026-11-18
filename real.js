@@ -47,7 +47,7 @@
   const mapsSearch = (q) => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
 
   /* ---------- navigation ---------- */
-  const TITLES = { home: 'REAL NIGHT', share: 'SHARE WHERE I AM', taxi: 'MY TAXI', check: 'CHECK THE CAR', dial: 'QUICK DIAL', safe: 'SAFE PLACES', plan: "TONIGHT'S PLAN" };
+  const TITLES = { home: 'WHAT TO DO IF…', share: 'SHARE WHERE I AM', taxi: 'MY TAXI', check: 'CHECK THE CAR', dial: 'QUICK DIAL', safe: 'SAFE PLACES', plan: "TONIGHT'S PLAN" };
 
   function go(screen) {
     $('#title').textContent = TITLES[screen] || 'REAL NIGHT';
@@ -107,62 +107,45 @@
     return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m} min`;
   }
 
+  // Reviewed by the safeguarding advisor: UK-only facts, victim-centred
+  const GUIDE = [
+    { title: "Your drink's been spiked (or a friend's)", steps: ['Tell staff or security now, and stay with someone you trust.', 'Call 999 if very drowsy, confused, vomiting or unconscious. Don’t leave them alone.', 'Report to police quickly (999 or 101) so they can arrange a test.'], action: { label: 'Call 999', tel: '999' } },
+    { title: "You've lost your friend", steps: ['Call and message them. Check location sharing and your agreed meeting point.', 'Ask venue staff or security to help search, including toilets and outside.', 'If you think they’re at risk, call 999. Don’t wait.'], action: { label: 'Call 999', tel: '999' } },
+    { title: "Someone won't leave you alone", steps: ['It’s not your fault. Move towards staff, friends or a busy area.', 'Ask bar staff for Angela. They’ll quietly get you away safely.', 'Not in a venue? Use Escape Call. In danger, call 999.'], action: { label: 'Set up Escape Call', go: 'escape' } },
+    { title: "You're being followed", steps: ['Head for somewhere busy and well lit, like a shop, bar or taxi rank.', 'Call 999. On a mobile and can’t speak? Press 55 when asked.', 'Don’t go home while they’re behind you. Stay where people are.'], action: { label: 'Call 999', tel: '999' } },
+    { title: 'A car you didn’t book pulls up', steps: ['Don’t get in, even if they say they’re your taxi.', 'Check the plate, car and driver match your booking before getting in.', 'Step back somewhere busy. If they won’t leave, call 999.'], action: { label: 'Call 999', tel: '999' } },
+    { title: 'You want to report it or get support', steps: ['It’s never your fault. You decide what happens next, at your pace.', 'A SARC gives free medical care and can store evidence while you decide.', 'Report on 101, or 999 in an emergency. Rape Crisis supports you 24/7.'], action: { label: 'Rape Crisis 0808 500 2222', tel: '08085002222', cls: 'green' } },
+  ];
+
   /* ---------- screens ---------- */
   const SCREENS = {
     home() {
-      const plan = store.get('plan', null);
-
-      // Tonight card: countdown to home-by, or a nudge to set a plan
-      if (plan && !plan.done) {
-        const left = plan.homeBy - Date.now();
-        const span = plan.homeBy - (plan.savedAt || plan.homeBy - 4 * 3600000);
-        const pct = Math.max(0, Math.min(100, 100 - (left / span) * 100));
-        html(`<section class="hero-card">
-          <p class="hc-kicker">TONIGHT</p>
-          <p class="hc-big">Home by ${esc(fmtTime(plan.homeBy))}</p>
-          <p class="hc-sub">${left > 0 ? 'in ' + duration(left) : 'Time to check in'}${plan.meet ? ` · meet at ${esc(plan.meet)}` : ''}</p>
-          <div class="hc-bar"><i style="width:${pct}%"></i></div>
-        </section>`);
-        view.lastElementChild.append(button("I'm home safe", 'r-btn green', () => { store.set('plan', Object.assign(plan, { done: true })); toast('Glad you’re home. Night!'); go('home'); }));
-      }
-
-      // The two tools people will actually use: no app to open at 3am
-      html(`<section class="hero-card">
-        <p class="hc-kicker">GOING OUT TONIGHT?</p>
-        <p class="hc-big">Put your plan on your lock screen</p>
-        <p class="hc-sub">Meeting point, taxi plate and who to call, right where you, a friend or a bouncer will see it. No app to open at 3am.</p>
-      </section>`);
-      view.lastElementChild.append(button('Make my lock screen', 'r-btn pink', () => go('lock')));
-      html(`<section class="hero-card alt">
-        <p class="hc-kicker">NEED TO GET AWAY?</p>
-        <p class="hc-big">Escape Call</p>
-        <p class="hc-sub">Your phone rings with a fake call, and a voice talks when you answer.</p>
-      </section>`);
-      view.lastElementChild.append(button('Set up a call', 'r-btn', () => go('escape')));
-
-      const sos = button('', 'sos', () => go('dial'));
-      sos.innerHTML = `<span class="sos-num">999</span><span><b>In danger? Get help now</b><small>Can't speak? On a mobile, press 55 when asked</small></span><span class="chev">›</span>`;
-      view.append(sos);
-
-      // The framework from the game: PLAN -> SPOT -> ACT -> REPORT
-      html(`<h2 class="more">More tools</h2>`);
-      html(`<div class="stepper">${STAGES.map((s) => `<span style="--c:${s.c}">${s.name}</span>`).join('<i>→</i>')}</div>`);
-      STAGES.forEach((stage, n) => {
-        html(`<h2 class="stage" style="--c:${stage.c}"><span>${n + 1}</span>${stage.name}<small>${stage.hint}</small></h2>`);
-        const list = document.createElement('div');
-        list.className = 'rows';
-        stage.items.forEach(([id, label, sub, icon]) => {
-          const row = document.createElement('button');
-          row.type = 'button';
-          row.className = 'tile row';
-          row.style.setProperty('--c', stage.c);
-          row.innerHTML = `<span class="ic">${pixelIcon(icon)}</span><span class="rt"><b>${esc(label)}</b><small>${esc(sub)}</small></span><span class="chev">›</span>`;
-          row.addEventListener('click', () => go(id));
-          list.append(row);
-        });
-        view.append(list);
+      html(`<p class="r-lede">What to do if… Tap what’s happening. Save this page before you go out.</p>`);
+      const list = document.createElement('div');
+      list.className = 'guide';
+      GUIDE.forEach((g, i) => {
+        const d = document.createElement('details');
+        d.className = 'sit';
+        d.innerHTML = `<summary><span class="sit-n">${i + 1}</span><span class="sit-t">${esc(g.title)}</span><span class="chev">›</span></summary><ol>${g.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>`;
+        const a = g.action;
+        d.append(a.tel ? link_(a.label, telHref(a.tel), 'r-btn ' + (a.cls || 'red')) : button(a.label, 'r-btn pink', () => go(a.go)));
+        list.append(d);
       });
-      html(`<p class="r-foot">${pixelIcon('lock')} No account. Nothing leaves this phone. Works offline once opened.</p>`);
+      view.append(list);
+      html(`<h2 class="more">Two tools to have ready</h2>`);
+      const rows = document.createElement('div');
+      rows.className = 'rows';
+      [['escape', 'Escape call', 'Your phone rings, and a voice talks', 'bell', '#3ddc84'], ['lock', 'Lock screen', 'Your plan on your wallpaper, no app needed', 'lock', '#c77dff']].forEach(([id, label, sub, icon, c]) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'tile row';
+        row.style.setProperty('--c', c);
+        row.innerHTML = `<span class="ic">${pixelIcon(icon)}</span><span class="rt"><b>${esc(label)}</b><small>${esc(sub)}</small></span><span class="chev">›</span>`;
+        row.addEventListener('click', () => go(id));
+        rows.append(row);
+      });
+      view.append(rows);
+      html(`<p class="r-foot">${pixelIcon('lock')} In danger, call 999. On a mobile and can't speak? Press 55 when asked (it doesn't send your location). It's never your fault.</p>`);
     },
 
     share() {
