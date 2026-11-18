@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Night Out: a pixel game about getting home safe</title>
+  <meta name="description" content="A pixel-art choose-your-path game for UK students about spiking, harassment, losing friends and getting home safely.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23120a1f'/%3E%3Crect x='3' y='3' width='4' height='4' fill='%23ffd166'/%3E%3Crect x='9' y='8' width='4' height='5' fill='%23ff4fa3'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet"></noscript>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <div class="screen-wrap">
+      <canvas id="screen" width="256" height="144" aria-label="Game scene"></canvas>
+
+      <div class="hud" id="hud" hidden>
+        <span class="chip" id="chapter"></span>
+        <div class="bars">
+          <div class="bar"><span>YOU</span><div class="meter"><i id="youBar"></i></div></div>
+          <div class="bar"><span>JESS</span><div class="meter"><i id="jessBar"></i></div></div>
+        </div>
+      </div>
+
+      <div class="title" id="title">
+        <h1>NIGHT<br><span>OUT</span></h1>
+        <p class="tag">Get everyone home safe.</p>
+        <button type="button" class="pbtn primary" id="startBtn">Press start</button>
+        <a class="pbtn small" href="real.html">Going out tonight? Real night mode</a>
+        <p class="note">You and your best mate Jess are heading into town. Every choice you make changes how safe you both are. Covers spiking, harassment and being followed, including a blurred, wobbling "spiked" scene and a timed scene where you're followed. Made for UK students.</p>
+      </div>
+
+      <div class="phone" id="phone" hidden aria-label="Your phone" role="dialog">
+        <div class="phone-screen" id="phoneScreen"></div>
+      </div>
+
+      <div class="ending" id="ending" hidden></div>
+    </div>
+
+    <section class="dialog" id="dialog" hidden aria-live="polite">
+      <div class="speaker" id="speaker"></div>
+      <p class="text" id="text"></p>
+      <div class="feedback" id="feedback" hidden></div>
+      <div class="timer" id="timer" hidden aria-label="Time left to decide"><i></i></div>
+      <div class="choices" id="choices"></div>
+      <button type="button" class="pbtn" id="continueBtn" hidden>Continue ▶</button>
+    </section>
+
+    <div class="controls">
+      <button type="button" class="pbtn small" id="muteBtn" aria-pressed="false">Sound: on</button>
+      <span class="keys">Keys: 1–3 to choose · Enter to continue · M to mute</span>
+    </div>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>

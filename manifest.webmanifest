@@ -1,0 +1,16 @@
+{
+  "name": "Night Out: real night mode",
+  "short_name": "Night Out",
+  "description": "Your night-out safety toolkit. Practise in the game, protect on the night.",
+  "start_url": "real.html",
+  "display": "standalone",
+  "background_color": "#0b0716",
+  "theme_color": "#120a1f",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23120a1f'/%3E%3Crect x='4' y='2' width='8' height='12' fill='%23ff4fa3'/%3E%3Crect x='5' y='3' width='6' height='8' fill='%231d2357'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
