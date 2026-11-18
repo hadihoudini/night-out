@@ -1219,6 +1219,7 @@
     $('#phone').hidden = true;
     setBars();
     $('#title').hidden = true;
+    $('#titleNote').hidden = true;
     $('#ending').hidden = true;
     $('#hud').hidden = false;
     $('#dialog').hidden = false;

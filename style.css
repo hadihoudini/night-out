@@ -82,9 +82,15 @@ body {
   line-height: 1.3;
   background: rgba(7, 4, 18, 0.45);
 }
+/* Title sits in the sky so the two characters stay visible below it */
+.title { justify-content: flex-start; padding-top: 4%; background: linear-gradient(rgba(7, 4, 18, 0.55), rgba(7, 4, 18, 0) 55%); }
+.title-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.title-actions .pbtn { text-decoration: none; color: var(--ink); }
+.title-actions .pbtn.primary { color: #fff; }
+.note.title-note { margin: 16px auto 0; max-width: 760px; text-align: center; }
 .title h1 {
   margin: 0;
-  font: clamp(30px, 8vw, 72px)/1.1 var(--pixel);
+  font: clamp(30px, 6.5vw, 64px)/1.1 var(--pixel);
   color: var(--ink);
   text-shadow: 4px 4px 0 #000;
 }
