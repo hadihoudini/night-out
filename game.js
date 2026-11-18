@@ -1214,7 +1214,8 @@
         </ul></div>
       </div>
       <div class="end-actions">
-        <a class="pbtn primary" href="real.html" id="realBtn">What to do if… guide ▶</a>
+        <button type="button" class="pbtn primary" id="shareBtn">Share to raise awareness</button>
+        <a class="pbtn" href="real.html" id="realBtn">What to do if… guide ▶</a>
         <button type="button" class="pbtn" id="cardBtn">Save my score card</button>
         <button type="button" class="pbtn" id="againBtn">Play again</button>
       </div>
@@ -1231,8 +1232,31 @@
     e.scrollTop = 0;
     e.querySelector('#againBtn').addEventListener('click', start);
     e.querySelector('#cardBtn').addEventListener('click', saveCard);
+    e.querySelector('#shareBtn').addEventListener('click', () => shareGame(grade));
     e.tabIndex = -1;
     e.focus(); // focus the panel, not a button, so a stray Enter can't restart the game
+  }
+
+  // Share the game so more people practise before a real night out
+  const GAME_URL = 'https://hadihoudini.github.io/night-out/';
+  async function shareGame(grade) {
+    const btn = $('#shareBtn');
+    const text = `I just played Night Out, a game about getting home safe from a night out: spiking, being followed, losing your mate. I got ${grade}. Try it before your next night out. Practise in the game, protect on the night.`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Night Out', text, url: GAME_URL });
+        btn.textContent = 'Thanks for sharing!';
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return; // they closed the share sheet
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${GAME_URL}`);
+      btn.textContent = 'Copied! Paste it anywhere';
+    } catch (e) {
+      window.open('https://wa.me/?text=' + encodeURIComponent(`${text} ${GAME_URL}`), '_blank', 'noopener');
+    }
   }
 
   // A shareable pixel score card (PNG) for Instagram stories and group chats
